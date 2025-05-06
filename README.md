@@ -1,2 +1,2 @@
-# Sistem-Manajemen-Inventaris-dan-Gudang-Toko-
+# SistemManajemenInventarisdanGudangToko
 sisstem in out barang di gudang toko
