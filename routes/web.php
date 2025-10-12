@@ -32,7 +32,7 @@ Route::middleware('auth')->group(function () {
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
 });
 
-Route::middleware(['auth', 'role:admin'])->group(function () { // Hanya admin dan pemilik
+Route::middleware(['auth', 'role:admin|pemilik'])->group(function () { // Hanya admin dan pemilik
     Route::resource('barangs', BarangController::class);
     Route::get('/incoming-transactions', [IncomingTransactionController::class, 'index'])->name('incoming_transactions.index');
     Route::get('/incoming-transactions/create', [IncomingTransactionController::class, 'create'])->name('incoming_transactions.create');
