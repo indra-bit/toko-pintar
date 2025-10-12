@@ -15,58 +15,36 @@ class LaporanController extends Controller
 {
     public function index(Request $request)
     {
-        // Query dasar untuk transaksi
-        $query = Transaksi::with('barang')->latest();
+        // Ambil filter dari request
+        $periode = $request->periode;
+        $start_date = $request->start_date;
+        $end_date = $request->end_date;
 
-        // Logika untuk filter periode
-        if ($request->has('periode')) {
-            switch ($request->periode) {
-                case 'harian':
-                    $query->whereDate('created_at', Carbon::today());
-                    break;
-                case 'mingguan':
-                    $query->whereBetween('created_at', [Carbon::now()->startOfWeek(), Carbon::now()->endOfWeek()]);
-                    break;
-                case 'bulanan':
-                    $query->whereMonth('created_at', Carbon::now()->month);
-                    break;
-            }
+        // Query transaksi sesuai filter
+        $query = Transaksi::query();
+        if ($start_date && $end_date) {
+            $query->whereBetween('created_at', [$start_date, $end_date]);
+        } elseif ($periode == 'harian') {
+            $query->whereDate('created_at', now()->toDateString());
+        } elseif ($periode == 'mingguan') {
+            $query->whereBetween('created_at', [now()->startOfWeek(), now()->endOfWeek()]);
+        } elseif ($periode == 'bulanan') {
+            $query->whereMonth('created_at', now()->month);
         }
+        $transaksis = $query->orderBy('created_at')->paginate(15);
 
-        // --- Filter Rentang Tanggal Kustom (BARU) ---
-        if ($request->filled('start_date') && $request->filled('end_date')) {
-            $startDate = Carbon::parse($request->start_date)->startOfDay();
-            $endDate = Carbon::parse($request->end_date)->endOfDay();
-            $query->whereBetween('created_at', [$startDate, $endDate]);
-        }
-        // --- Akhir Filter Rentang Tanggal Kustom ---
-
-
-        // Ambil data transaksi dengan paginasi (50 data per halaman)
-        $transaksis = $query->paginate(50)->withQueryString();
-
-        // Hitung total penjualan HANYA dari data yang difilter
-        $total = (clone $query)->sum('total_harga');
-
-        // --- Data untuk Visualisasi Grafik ---
-        // Mengambil total penjualan harian untuk 30 hari terakhir
-        $penjualanHarian = Transaksi::select(
-                DB::raw('DATE(created_at) as tanggal'),
-                DB::raw('SUM(total_harga) as total')
-            )
-            ->where('created_at', '>=', Carbon::now()->subDays(30))
-            ->groupBy('tanggal')
-            ->orderBy('tanggal', 'asc')
-            ->get();
-
-        // Format data untuk Chart.js
-        $labels = $penjualanHarian->pluck('tanggal')->map(function ($date) {
-            return Carbon::parse($date)->format('d M');
+        // Kelompokkan transaksi per tanggal
+        $grouped = $query->get()->groupBy(function($item) {
+            return $item->created_at->format('d-m-Y');
         });
-        $data = $penjualanHarian->pluck('total');
-        // --- Akhir Data Grafik ---
+        $labels = $grouped->keys()->toArray();
+        $data = $grouped->map(function($items) {
+            return $items->sum('total_harga');
+        })->values()->toArray();
 
-        return view('laporan.index', compact('transaksis', 'total', 'labels', 'data'));
+        $total = $query->sum('total_harga');
+
+        return view('laporan.index', compact('transaksis', 'labels', 'data', 'total'));
     }
         public function inventaris()
     {
