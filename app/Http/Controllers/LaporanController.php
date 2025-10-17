@@ -31,7 +31,8 @@ class LaporanController extends Controller
         } elseif ($periode == 'bulanan') {
             $query->whereMonth('created_at', now()->month);
         }
-        $transaksis = $query->orderBy('created_at')->paginate(15);
+    // Tampilkan data tabel berdasarkan tanggal terbaru (descending)
+    $transaksis = $query->orderByDesc('created_at')->paginate(15);
 
         // Kelompokkan transaksi per tanggal
         $grouped = $query->get()->groupBy(function($item) {
@@ -41,6 +42,10 @@ class LaporanController extends Controller
         $data = $grouped->map(function($items) {
             return $items->sum('total_harga');
         })->values()->toArray();
+
+        // Balikkan urutan agar grafik menampilkan tanggal terbaru di sebelah kiri (descending)
+        $labels = array_reverse($labels);
+        $data = array_reverse($data);
 
         $total = $query->sum('total_harga');
 
