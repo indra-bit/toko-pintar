@@ -29,7 +29,7 @@
             </div>
         @endif
 
-        <form action="{{ route('incoming_transactions.store') }}" method="POST">
+        <form id="incoming-transaction-form" action="{{ route('incoming_transactions.store') }}" method="POST">
             @csrf
 
             <div class="shadow-sm mb-4">
@@ -81,6 +81,9 @@
         const addItemButton = document.getElementById('add-item-incoming');
         const supplierNameInput = document.getElementById('supplier_name');
         const referenceNumberInput = document.getElementById('reference_number');
+        // Scope tombol submit hanya untuk form transaksi ini
+        const form = document.getElementById('incoming-transaction-form');
+        const scopedSubmit = form ? form.querySelector('button[type="submit"]') : null;
 
         // Fungsi untuk membuat dan menambahkan baris input barang baru
         function createNewRow() {
@@ -178,9 +181,9 @@
             toggleSubmitButton();
         }
 
-        // Fungsi untuk mengaktifkan/menonaktifkan tombol submit form utama
+        // Fungsi untuk mengaktifkan/menonaktifkan tombol submit form utama (scoped ke form ini)
         function toggleSubmitButton() {
-            const submitButton = document.querySelector('button[type="submit"]');
+            const submitButton = scopedSubmit;
             const allRows = itemsContainer.querySelectorAll('.incoming-item-row');
             const isSupplierFilled = supplierNameInput.value.trim() !== '';
 
@@ -213,7 +216,8 @@
 
         // Tambahkan baris pertama saat halaman dimuat
         createNewRow();
-        document.querySelector('button[type="submit"]').disabled = true; // Nonaktifkan submit di awal
+        // Nonaktifkan tombol submit hanya untuk form transaksi saat halaman dimuat
+        if (scopedSubmit) scopedSubmit.disabled = true;
 
         // Event listener untuk tombol "Tambah Barang"
         addItemButton.addEventListener('click', function () {

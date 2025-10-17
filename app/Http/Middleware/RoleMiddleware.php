@@ -10,7 +10,15 @@ class RoleMiddleware
 {
     public function handle(Request $request, Closure $next, $role)
     {
-        if (Auth::check() && Auth::user()->role === $role) {
+        // Jika tidak login, langsung tolak
+        if (!Auth::check()) {
+            abort(403, 'Unauthorized');
+        }
+
+        // Mendukung multiple roles dipisahkan dengan '|' atau ',' misal: 'admin|pemilik' atau 'admin,pemilik'
+        $allowedRoles = array_map('trim', preg_split('/[\|,]/', $role));
+
+        if (in_array(Auth::user()->role, $allowedRoles)) {
             return $next($request);
         }
 
