@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use Illuminate\Support\Facades\DB;
 use App\Models\Barang;
 use App\Models\Transaksi;
+use App\Models\Penjualan;
 use Illuminate\Http\Request;
 
 class TransaksiController extends Controller
@@ -14,8 +15,9 @@ class TransaksiController extends Controller
      */
     public function index()
     {
-        $transaksis = Transaksi::with('barang')->latest()->paginate(50);
-        return view('transaksis.index', compact('transaksis'));
+        // Ambil penjualan yang memiliki transaksis, termasuk relasi barang
+        $penjualans = Penjualan::with(['transaksis.barang'])->latest()->paginate(25);
+        return view('transaksis.index', compact('penjualans'));
     }
 
     /**
@@ -40,6 +42,14 @@ class TransaksiController extends Controller
 
         try {
             DB::transaction(function () use ($request) {
+                // Buat header penjualan
+                $penjualan = Penjualan::create([
+                    'kode' => 'PJ' . now()->format('YmdHis'),
+                    'total' => 0,
+                ]);
+
+                $grandTotal = 0;
+
                 foreach ($request->items as $item) {
                     if (!isset($item['barang_id']) || !isset($item['jumlah'])) {
                         continue;
@@ -56,13 +66,19 @@ class TransaksiController extends Controller
                     $barang->stok -= $item['jumlah'];
                     $barang->save();
 
-                    // Membuat catatan di tabel transaksi
+                    // Membuat catatan di tabel transaksi terkait penjualan
                     Transaksi::create([
+                        'penjualan_id' => $penjualan->id,
                         'barang_id' => $barang->id,
                         'jumlah' => $item['jumlah'],
                         'total_harga' => $total,
                     ]);
+
+                    $grandTotal += $total;
                 }
+
+                // Update total penjualan
+                $penjualan->update(['total' => $grandTotal]);
             });
 
             return back()->with('success', 'Transaksi berhasil disimpan.');
@@ -117,4 +133,13 @@ class TransaksiController extends Controller
     public function edit(Transaksi $transaksi) {}
     public function update(Request $request, Transaksi $transaksi) {}
     public function destroy(Transaksi $transaksi) {}
+
+    /**
+     * Cetak struk untuk penjualan tertentu
+     */
+    public function print($penjualanId)
+    {
+        $penjualan = Penjualan::with('transaksis.barang')->findOrFail($penjualanId);
+        return view('transaksis.print', compact('penjualan'));
+    }
 }

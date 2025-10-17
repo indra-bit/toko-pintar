@@ -40,8 +40,10 @@ Route::middleware(['auth', 'role:admin|pemilik'])->group(function () { // Hanya 
     Route::get('/incoming-transactions/{incoming_transaction}', [IncomingTransactionController::class, 'show'])->name('incoming_transactions.show');
 });
 
+// Group route untuk kasir - termasuk transaksi dan cetak
 Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::resource('transaksis', TransaksiController::class);
+    Route::get('/transaksis/{penjualan}/print', [TransaksiController::class, 'print'])->name('transaksis.print');
 });
 
 Route::middleware(['auth', 'role:pemilik'])->group(function () {

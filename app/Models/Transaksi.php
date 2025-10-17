@@ -17,6 +17,7 @@ class Transaksi extends Model
      */
     protected $fillable = [
         'barang_id',
+        'penjualan_id',
         'jumlah',
         'total_harga',
     ];
@@ -27,5 +28,10 @@ class Transaksi extends Model
     public function barang(): BelongsTo
     {
         return $this->belongsTo(Barang::class);
+    }
+
+    public function penjualan()
+    {
+        return $this->belongsTo(Penjualan::class);
     }
 }
