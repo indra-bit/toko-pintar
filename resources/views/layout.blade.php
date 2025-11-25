@@ -226,9 +226,7 @@
                             <li><a class="dropdown-item" href="{{ route('incoming_transactions.create') }}">Input Transaksi Masuk Baru</a></li>
                         </ul>
                     </li>
-                    @endif
 
-                    @if(Auth::check() && (Auth::user()->role === 'kasir'))
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle @if(request()->is('transaksis*')) active @endif" href="#" id="navbarDropdownTransaksi" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-exchange-alt"></i> Transaksi
@@ -238,9 +236,7 @@
                             <li><a class="dropdown-item" href="{{ route('transaksis.create') }}">Input Transaksi Baru</a></li>
                         </ul>
                     </li>
-                    @endif
 
-                    @if(Auth::check() && (Auth::user()->role === 'pemilik'))
                     <li class="nav-item dropdown">
                         <a class="nav-link dropdown-toggle @if(request()->is('laporan*')) active @endif" href="#" id="navbarDropdownLaporan" role="button" data-bs-toggle="dropdown" aria-expanded="false">
                             <i class="fas fa-file-alt"></i> Laporan

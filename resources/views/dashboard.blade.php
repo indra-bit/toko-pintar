@@ -113,9 +113,7 @@
                 </div>
             </a>
         </div>
-        @endif
 
-        @if(Auth::user()->role === 'kasir')
         <div class="col-md-4 mb-3">
             <a href="{{ route('transaksis.index') }}" class="text-decoration-none">
                 <div class="card border-success shadow-sm h-100">
@@ -136,9 +134,7 @@
                 </div>
             </a>
         </div>
-        @endif
 
-        @if(Auth::user()->role === 'pemilik')
         <div class="col-md-4 mb-3">
             <a href="{{ route('laporan.index') }}" class="text-decoration-none">
                 <div class="card border-danger shadow-sm h-100">

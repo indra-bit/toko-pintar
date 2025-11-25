@@ -26,33 +26,22 @@ Route::get('/', function () {
 Route::get('/dashboard', [DashboardController::class, 'index'])
     ->middleware(['auth', 'verified'])->name('dashboard');
 
-Route::middleware('auth')->group(function () {
+Route::middleware(['auth', 'role:admin'])->group(function () {
     Route::get('/profile', [ProfileController::class, 'edit'])->name('profile.edit');
     Route::patch('/profile', [ProfileController::class, 'update'])->name('profile.update');
     Route::delete('/profile', [ProfileController::class, 'destroy'])->name('profile.destroy');
-});
-
-Route::middleware(['auth', 'role:admin|pemilik'])->group(function () { // Hanya admin dan pemilik
     Route::resource('barangs', BarangController::class);
     Route::get('/incoming-transactions', [IncomingTransactionController::class, 'index'])->name('incoming_transactions.index');
     Route::get('/incoming-transactions/create', [IncomingTransactionController::class, 'create'])->name('incoming_transactions.create');
     Route::post('/incoming-transactions', [IncomingTransactionController::class, 'store'])->name('incoming_transactions.store');
     Route::get('/incoming-transactions/{incoming_transaction}', [IncomingTransactionController::class, 'show'])->name('incoming_transactions.show');
-});
-
-// Group route untuk kasir - termasuk transaksi dan cetak
-Route::middleware(['auth', 'role:kasir'])->group(function () {
     Route::resource('transaksis', TransaksiController::class);
     Route::get('/transaksis/{penjualan}/print', [TransaksiController::class, 'print'])->name('transaksis.print');
-});
-
-Route::middleware(['auth', 'role:pemilik'])->group(function () {
     Route::get('/laporan', [LaporanController::class, 'index'])->name('laporan.index');
     Route::get('/laporan/inventaris', [LaporanController::class, 'inventaris'])->name('laporan.inventaris');
     Route::get('/laporan/export', [LaporanController::class, 'export'])->name('laporan.export');
     Route::get('/stock-history', [StockHistoryController::class, 'index'])->name('stock_history.index');
 });
-
 
 
 
