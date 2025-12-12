@@ -2,9 +2,8 @@
 
 @section('content')
     <div class="container mt-4">
-        <h2>Riwayat Perubahan Stok</h2>
+        <h2 class="fw-bold"><i class="fas fa-history me-2"></i>Riwayat Perubahan Stok</h2>
         <p>Berikut adalah catatan setiap perubahan stok barang dalam inventaris Anda.</p>
-        <hr class="mb-4">
 
         <div class="table-responsive">
             <table class="table table-bordered table-striped table-hover">

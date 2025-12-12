@@ -129,7 +129,16 @@ class TransaksiController extends Controller
         }
     }
 
-    public function show(Transaksi $transaksi) {}
+    /**
+     * Menampilkan detail transaksi penjualan tertentu (Struk).
+     */
+    public function show($id)
+    {
+        // Cari data penjualan berdasarkan ID, lengkap dengan item transaksinya
+        $penjualan = Penjualan::with(['transaksis.barang', 'transaksis'])->findOrFail($id);
+
+        return view('transaksis.show', compact('penjualan'));
+    }
     public function edit(Transaksi $transaksi) {}
     public function update(Request $request, Transaksi $transaksi) {}
     public function destroy(Transaksi $transaksi) {}

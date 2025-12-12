@@ -1,67 +1,89 @@
 @extends('layout')
 
 @section('content')
-    <h2>Riwayat Penjualan</h2>
+<div class="container mt-4">
+    <div class="d-flex justify-content-between align-items-center mb-4">
+        <div>
+            <h2 class="fw-bold"><i class="fas fa-history me-2"></i>Riwayat Transaksi</h2>
+            <p class="text-muted mb-0">Daftar struk transaksi yang telah berhasil dibayar.</p>
+        </div>
+        <a href="{{ route('transaksis.create') }}" class="btn btn-primary btn-lg shadow-sm">
+            <i class="fas fa-cash-register me-2"></i>Transaksi Baru
+        </a>
+    </div>
 
-    @if (session('success'))
-        <div class="alert alert-success">{{ session('success') }}</div>
-    @endif
-
-    @if (session('error'))
-        <div class="alert alert-danger">{{ session('error') }}</div>
-    @endif
-
-    <a href="{{ route('transaksis.create') }}" class="btn btn-primary mb-3">Tambah Transaksi Baru</a>
-
-    @forelse($penjualans as $index => $penjualan)
-        <div class="card mb-3">
-            <div class="card-header d-flex justify-content-between align-items-center">
-                <div>
-                    <strong>Kode:</strong> {{ $penjualan->kode }}<br>
-                    <small>{{ $penjualan->created_at->format('d-m-Y H:i') }}</small>
-                </div>
-                <div>
-                    <a href="{{ route('transaksis.print', $penjualan->id) }}" class="btn btn-sm btn-outline-secondary" target="_blank">Cetak Struk</a>
-                </div>
-            </div>
-            <div class="card-body">
-                <div class="table-responsive">
-                    <table class="table table-sm table-bordered mb-0">
-                        <thead class="table-light">
+    <div class="shadow-sm border-0">
+        <div class="card-body p-0">
+            <div class="table-responsive">
+                <table class="table table-hover table-striped align-middle mb-0">
+                    <thead class="table-dark">
+                        <tr>
+                            <th class="text-center" width="5%">No</th>
+                            <th width="20%">No. Struk</th>
+                            <th width="20%">Tanggal & Waktu</th>
+                            <th class="text-center">Jumlah Item</th>
+                            <th class="text-end" width="20%">Total Transaksi</th>
+                            <th class="text-center" width="15%">Aksi</th>
+                        </tr>
+                    </thead>
+                    <tbody>
+                        @forelse ($penjualans as $penjualan)
                             <tr>
-                                <th>#</th>
-                                <th>Nama Barang</th>
-                                <th>Jumlah</th>
-                                <th>Harga Satuan</th>
-                                <th>Subtotal</th>
+                                <td class="text-center">{{ $loop->iteration + $penjualans->firstItem() - 1 }}</td>
+
+                                <td class="fw-bold text-primary">
+                                    {{ $penjualan->kode }}
+                                </td>
+
+                                <td>
+                                    <div class="fw-bold">{{ $penjualan->created_at->format('d M Y') }}</div>
+                                    <small class="text-muted"><i class="far fa-clock me-1"></i> {{ $penjualan->created_at->format('H:i') }} WIB</small>
+                                </td>
+
+                                <td class="text-center">
+                                    <span class="badge bg-secondary rounded-pill px-3">
+                                        {{ $penjualan->transaksis->count() }} Jenis Barang
+                                    </span>
+                                </td>
+
+                                <td class="text-end fw-bold text-success fs-5">
+                                    Rp {{ number_format($penjualan->total, 0, ',', '.') }}
+                                </td>
+
+                                <td class="text-center">
+                                    <div class="btn-group shadow-sm">
+                                        <a href="{{ route('transaksis.show', $penjualan->id) }}" class="btn btn-sm btn-info text-white" title="Lihat Detail Barang">
+                                            <i class="fas fa-eye me-1"></i> Detail
+                                        </a>
+                                        <a href="{{ route('transaksis.print', $penjualan->id) }}" target="_blank" class="btn btn-sm btn-secondary" title="Cetak Struk">
+                                            <i class="fas fa-print"></i>
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
-                        </thead>
-                        <tbody>
-                            @foreach($penjualan->transaksis as $i => $t)
-                                <tr>
-                                    <td>{{ $i + 1 }}</td>
-                                    <td>{{ $t->barang->nama_barang ?? 'N/A' }}</td>
-                                    <td>{{ $t->jumlah }}</td>
-                                    <td>Rp {{ number_format($t->barang->harga ?? 0, 0, ',', '.') }}</td>
-                                    <td>Rp {{ number_format($t->total_harga, 0, ',', '.') }}</td>
-                                </tr>
-                            @endforeach
-                        </tbody>
-                        <tfoot>
+                        @empty
                             <tr>
-                                <td colspan="4" class="text-end"><strong>Total</strong></td>
-                                <td><strong>Rp {{ number_format($penjualan->total, 0, ',', '.') }}</strong></td>
+                                <td colspan="6" class="text-center py-5">
+                                    <div class="text-muted">
+                                        <i class="fas fa-receipt fa-3x mb-3 text-secondary"></i>
+                                        <p class="mb-2">Belum ada transaksi hari ini.</p>
+                                        <a href="{{ route('transaksis.create') }}" class="btn btn-sm btn-primary">
+                                            Mulai Kasir
+                                        </a>
+                                    </div>
+                                </td>
                             </tr>
-                        </tfoot>
-                    </table>
-                </div>
+                        @endforelse
+                    </tbody>
+                </table>
             </div>
         </div>
-    @empty
-        <div class="alert alert-info">Belum ada penjualan.</div>
-    @endforelse
 
-    <div class="d-flex justify-content-center">
-        {{ $penjualans->links() }}
+        @if($penjualans->hasPages())
+            <div class="card-footer bg-white py-3">
+                {{ $penjualans->links() }}
+            </div>
+        @endif
     </div>
+</div>
 @endsection

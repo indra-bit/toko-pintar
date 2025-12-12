@@ -25,8 +25,8 @@ class BarangController extends Controller
                 return $query->where('category_id', $categoryId);
             })
             ->latest()
-            ->paginate(15) // Menggunakan paginasi, 15 item per halaman
-            ->withQueryString(); // Agar filter tetap ada saat pindah halaman
+            ->paginate(15)
+            ->withQueryString();
 
         $categories = Category::orderBy('name')->get();
 
@@ -38,7 +38,10 @@ class BarangController extends Controller
      */
     public function create()
     {
-        $categories = Category::orderBy('name')->get();
+        // Ambil semua kategori dari database
+        $categories = \App\Models\Category::all();
+
+        // Kirim variabel $categories ke view
         return view('barangs.create', compact('categories'));
     }
 
@@ -121,5 +124,25 @@ class BarangController extends Controller
     {
         $barang->delete();
         return redirect()->route('barangs.index')->with('success', 'Barang berhasil dihapus.');
+    }
+
+    /**
+     * API untuk mencari barang berdasarkan kode (Dipakai oleh Scanner)
+     */
+    public function cariByKode($kode)
+    {
+        $barang = Barang::where('kode_barang', $kode)->first();
+
+        if ($barang) {
+            return response()->json([
+                'status' => 'success',
+                'data' => $barang
+            ]);
+        }
+
+        return response()->json([
+            'status' => 'error',
+            'message' => 'Barang tidak ditemukan!'
+        ], 404);
     }
 }

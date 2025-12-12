@@ -3,24 +3,25 @@
 namespace App\Http\Controllers;
 
 use Illuminate\Http\Request;
-use App\Models\Barang; // Import model Barang
-use App\Models\IncomingTransaction; // Import model IncomingTransaction
-use App\Models\IncomingTransactionItem; // Import model IncomingTransactionItem
-use Illuminate\Support\Facades\DB; // Import DB facade for transactions
+use App\Models\Barang;
+use App\Models\IncomingTransaction;
+use App\Models\IncomingTransactionItem;
+use App\Models\StockHistory;
+use Illuminate\Support\Facades\DB;
 
 class IncomingTransactionController extends Controller
 {
-
     /**
      * Menampilkan daftar transaksi masuk.
      */
     public function index()
     {
-        $incomingTransactions = IncomingTransaction::with('user')
+        // Menggunakan variabel $incomingTransactions agar sesuai dengan View
+        $transactions = IncomingTransaction::with('user')
                                                  ->latest()
-                                                 ->paginate(10); // Ambil 10 per halaman, terbaru dulu
+                                                 ->paginate(10);
 
-        return view('incoming_transactions.index', compact('incomingTransactions'));
+        return view('incoming_transactions.index', compact('transactions'));
     }
 
     /**
@@ -28,94 +29,93 @@ class IncomingTransactionController extends Controller
      */
     public function create()
     {
-        $barangs = Barang::all(); // Ambil semua data barang untuk dropdown
-
+        $barangs = Barang::all();
         return view('incoming_transactions.create', compact('barangs'));
     }
 
     /**
-     * Menyimpan transaksi masuk yang baru dibuat ke storage.
+     * Menyimpan transaksi masuk (Perbaikan Logika Mapping).
      */
     public function store(Request $request)
     {
+        // 1. Validasi Input sesuai nama field di Form (create.blade.php)
         $request->validate([
-            'supplier_name' => 'required|string|max:255',
-            'reference_number' => 'nullable|string|max:255',
-            'notes' => 'nullable|string',
+            'supplier' => 'required|string|max:255', // Di form namanya 'supplier'
+            'tanggal' => 'required|date',            // Di form ada input tanggal
             'items' => 'required|array|min:1',
             'items.*.barang_id' => 'required|exists:barangs,id',
-            'items.*.quantity' => 'required|integer|min:1',
-            'items.*.unit_cost' => 'nullable|numeric|min:0',
+            'items.*.jumlah' => 'required|integer|min:1', // Di form namanya 'jumlah'
         ]);
 
         try {
             DB::transaction(function () use ($request) {
                 $totalAmount = 0;
 
-                // Buat transaksi masuk utama
+                // 2. Simpan Header Transaksi
+                // Kita mapping dari input form 'supplier' ke kolom database 'supplier_name'
                 $incomingTransaction = IncomingTransaction::create([
-                    'supplier_name' => $request->supplier_name,
-                    'reference_number' => $request->reference_number,
-                    'notes' => $request->notes,
-                    'user_id' => auth()->id(), // User yang sedang login
-                    'total_amount' => 0, // Akan diupdate setelah semua item diproses
+                    'supplier_name' => $request->supplier,
+                    'reference_number' => 'RX-' . time(), // Generate nomor referensi otomatis
+                    'notes' => 'Barang Masuk Tanggal ' . $request->tanggal,
+                    'user_id' => auth()->id(),
+                    'total_amount' => 0,
+                    'created_at' => $request->tanggal . ' ' . now()->format('H:i:s'), // Set tanggal sesuai input
                 ]);
 
+                // 3. Loop Barang
                 foreach ($request->items as $itemData) {
                     $barang = Barang::findOrFail($itemData['barang_id']);
-                    $oldStock = $barang->stok; // Simpan stok lama
+                    $oldStock = $barang->stok;
 
-                    $quantity = $itemData['quantity'];
-                    $unitCost = $itemData['unit_cost'] ?? 0;
-                    $subTotal = $quantity * $unitCost;
+                    // Mapping: Form 'jumlah' -> Database 'quantity'
+                    $quantity = $itemData['jumlah'];
+                    $unitCost = 0; // Default 0 jika tidak ada input harga beli
+                    $subTotal = 0; // Default 0
 
-                    // Tambah stok barang
+                    // A. Update Stok Barang
                     $barang->stok += $quantity;
                     $barang->save();
 
-                    // Catat perubahan stok di history
-                    \App\Models\StockHistory::create([
+                    // B. Catat History Stok
+                    StockHistory::create([
                         'barang_id' => $barang->id,
                         'user_id' => auth()->id(),
                         'old_stock' => $oldStock,
                         'new_stock' => $barang->stok,
-                        'change_quantity' => $quantity, // Perubahan positif
-                        'reason' => 'Penerimaan Barang',
+                        'change_quantity' => $quantity,
+                        'reason' => 'Penerimaan Barang (Supl: ' . $request->supplier . ')',
                         'reference_type' => IncomingTransaction::class,
-                        'reference_id' => $incomingTransaction->id,
+                        'reference_id' => $incomingTransaction->id, // Bisa null jika kolom belum ada di DB
                     ]);
 
-                    // Buat detail item transaksi masuk
+                    // C. Simpan Detail Item Transaksi
                     IncomingTransactionItem::create([
                         'incoming_transaction_id' => $incomingTransaction->id,
                         'barang_id' => $barang->id,
-                        'quantity' => $quantity,
+                        'quantity' => $quantity, // Masuk ke kolom quantity
                         'unit_cost' => $unitCost,
                         'sub_total' => $subTotal,
                     ]);
-
-                    $totalAmount += $subTotal;
                 }
 
-                // Update total_amount pada transaksi masuk utama setelah semua item diproses
+                // Update total jika ada logika harga (saat ini 0 dulu)
                 $incomingTransaction->update(['total_amount' => $totalAmount]);
             });
 
-            return redirect()->route('incoming_transactions.index')->with('success', 'Transaksi masuk berhasil disimpan.');
+            return redirect()->route('incoming_transactions.index')
+                             ->with('success', 'Transaksi masuk berhasil disimpan.');
 
         } catch (\Exception $e) {
-            return back()->with('error', 'Gagal menyimpan transaksi masuk: ' . $e->getMessage())->withInput();
+            return back()->with('error', 'Gagal menyimpan: ' . $e->getMessage())->withInput();
         }
     }
 
     /**
-     * Menampilkan detail transaksi masuk tertentu.
+     * Menampilkan detail.
      */
     public function show(IncomingTransaction $incomingTransaction)
     {
-        // Muat relasi item-item dan barang terkait untuk tampilan detail
         $incomingTransaction->load('items.barang', 'user');
-
         return view('incoming_transactions.show', compact('incomingTransaction'));
     }
 }

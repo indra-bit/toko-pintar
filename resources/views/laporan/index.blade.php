@@ -5,7 +5,7 @@
     <div class="row mb-4">
         <div class="col-12">
             <div class="d-flex justify-content-between align-items-center">
-                <h2 class="mb-0">Laporan Penjualan</h2>
+                <h2 class="fw-bold"><i class="fas fa-file-alt me-2"></i>Laporan Penjualan</h2>
                 <a href="{{ route('laporan.export', request()->query()) }}" class="btn btn-success">
                     <i class="fas fa-file-excel me-2"></i>Ekspor ke CSV
                 </a>
@@ -15,8 +15,6 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
-                <div class="card-body">
                     <form action="{{ route('laporan.index') }}" method="GET" class="row g-3 align-items-center">
                         <div class="col-md-3">
                             <label for="periode" class="form-label">Filter Cepat:</label>
@@ -43,14 +41,12 @@
                             </div>
                         </div>
                     </form>
-                </div>
-            </div>
         </div>
     </div>
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
+            <div class="shadow-sm">
                 <div class="card-header bg-primary text-white">
                     <i class="fas fa-chart-line me-2"></i>Grafik Penjualan
                 </div>
@@ -65,7 +61,7 @@
 
     <div class="row mb-4">
         <div class="col-12">
-            <div class="card shadow-sm">
+            <div class="shadow-sm">
                 <div class="card-body">
                     <div class="table-responsive">
                         <table class="table table-bordered table-striped table-hover">

@@ -2,9 +2,8 @@
 
 @section('content')
 <div class="container">
-    <h2 class="mb-4">Laporan Inventaris Barang</h2>
+    <h2 class="fw-bold"><i class="fas fa-file-alt me-2"></i>Laporan Inventaris Barang</h2>
     <p>Laporan ini menunjukkan daftar semua barang, stok terkini, dan nilai total inventaris Anda saat ini.</p>
-    <hr class="mb-4">
 
     <div class="table-responsive">
         {{-- Menggunakan kelas tabel yang sama dengan halaman lain untuk konsistensi --}}

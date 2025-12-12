@@ -2,9 +2,9 @@
 
 @section('content')
     <div class="container mt-4">
-        <h2>Daftar Transaksi Masuk</h2>
+        <h2 class="fw-bold"><i class="fas fa-dolly-flatbed me-2"></i>Daftar Transaksi Masuk</h2>
         <p>Riwayat pembelian barang dari supplier.</p>
-        <hr class="mb-4">
+
 
         @if (session('success'))
             <div class="alert alert-success">
@@ -39,7 +39,7 @@
                             </tr>
                         </thead>
                         <tbody>
-                            @forelse ($incomingTransactions as $transaction)
+                            @forelse ($transactions as $transaction)
                                 <tr>
                                     <td>{{ $loop->iteration }}</td>
                                     <td>{{ $transaction->created_at->format('d M Y H:i') }}</td>
@@ -65,7 +65,7 @@
 
                 {{-- Link paginasi --}}
                 <div class="d-flex justify-content-center">
-                    {{ $incomingTransactions->links() }}
+                    {{ $transactions->links() }}
                 </div>
     </div>
 @endsection
