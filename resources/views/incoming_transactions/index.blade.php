@@ -2,9 +2,11 @@
 
 @section('content')
     <div class="container mt-4">
-        <h2 class="fw-bold"><i class="fas fa-dolly-flatbed me-2"></i>Daftar Transaksi Masuk</h2>
-        <p>Riwayat pembelian barang dari supplier.</p>
-
+        <div class="d-flex justify-content-between align-items-center mb-4">
+            <div>
+                <h2 class="fw-bold"><i class="fas fa-dolly-flatbed me-2"></i>Daftar Transaksi Masuk</h2>
+                <p>Riwayat pembelian barang dari supplier.</p>
+            </div>
 
         @if (session('success'))
             <div class="alert alert-success">
@@ -23,7 +25,7 @@
         <a href="{{ route('incoming_transactions.create') }}" class="btn btn-primary mb-3">
             <i class="fas fa-plus me-2"></i>Catat Transaksi Masuk Baru
         </a>
-
+</div>
 
                 <div class="table-responsive">
                     <table class="table table-bordered table-striped table-hover">
