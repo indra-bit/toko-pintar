@@ -21,7 +21,7 @@
                     <div class="col-md-1 text-center">
                         <i class="fas fa-barcode fa-2x text-muted"></i>
                     </div>
-                    <div class="col-md-8">
+                    <div class="col-md-11">
                         <div class="input-group input-group-lg">
                             <span class="input-group-text bg-white text-primary"><i class="fas fa-search"></i></span>
                             <input type="text" name="search" id="scanner-search" class="form-control"
@@ -33,16 +33,35 @@
                             @endif
                         </div>
                     </div>
-                    <div class="col-md-3 d-grid">
-                        <button type="submit" class="btn btn-primary btn-lg">
-                            Cari Manual
-                        </button>
-                    </div>
                 </div>
             </form>
         </div>
     </div>
 
+<div class="shadow-sm mb-4 border-light">
+        <div class="card-body p-3 bg-light rounded">
+            <form action="{{ route('barangs.index') }}" method="GET">
+                <div class="row align-items-center">
+                    <div class="col-md-3">
+                        <label class="fw-bold text-muted mb-0"><i class="fas fa-search me-2"></i>Pencarian Manual:</label>
+                    </div>
+                    <div class="col-md-9">
+                        <div class="input-group">
+                            <input type="text" name="search" class="form-control"
+                                   placeholder="Ketik Nama Barang atau Kode Barang disini..."
+                                   value="{{ request('search') }}">
+
+                            @if(request('search'))
+                                <a href="{{ route('barangs.index') }}" class="btn btn-outline-secondary" title="Reset Pencarian"><i class="fas fa-times"></i></a>
+                            @endif
+
+                            <button class="btn btn-primary px-4" type="submit">Cari</button>
+                        </div>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
 
         <div class="card-body">
             @if(session('success'))
@@ -135,6 +154,14 @@ document.addEventListener('DOMContentLoaded', function() {
         }
     });
     */
+   if ($('.alert').length > 0) {
+        setTimeout(function() {
+            // Efek fadeOut menggunakan jQuery
+            $('.alert').fadeOut(500, function() {
+                $(this).remove();
+            });
+        }, 2000); // 3000ms = 3 detik
+    }
 });
 </script>
 @endpush

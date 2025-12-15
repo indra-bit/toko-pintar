@@ -125,7 +125,7 @@ document.addEventListener('DOMContentLoaded', function () {
 
     let itemIndex = 0;
     let typingTimer;
-    const doneTypingInterval = 500; // Jeda 0.5 detik (Debounce)
+    const doneTypingInterval = 500; // Jeda 0.5 detik
 
     // Fokus awal ke scanner
     scannerInput.focus();
@@ -159,15 +159,13 @@ document.addEventListener('DOMContentLoaded', function () {
             .then(response => response.json())
             .then(data => {
                 if (data.status === 'success') {
-                    // Barang Ditemukan -> Masukkan Keranjang
                     addToCart(data.data, 1);
-
                     scanStatus.innerHTML = `<span class="text-success fw-bold"><i class="fas fa-check"></i> Berhasil: ${data.data.nama_barang}</span>`;
-                    scannerInput.value = ''; // Kosongkan input
-                    scannerInput.focus();    // Fokus ulang
+                    scannerInput.value = '';
+                    scannerInput.focus();
                 } else {
                     scanStatus.innerHTML = `<span class="text-danger fw-bold"><i class="fas fa-times"></i> Barang tidak ditemukan!</span>`;
-                    scannerInput.select();   // Block teks biar mudah diganti
+                    scannerInput.select();
                 }
             })
             .catch(err => {
@@ -176,63 +174,92 @@ document.addEventListener('DOMContentLoaded', function () {
             });
     }
 
-    // --- 2. LOGIKA KERANJANG (Shared Function) ---
+    // --- 2. LOGIKA KERANJANG (UPDATE: Input Editable) ---
     function addToCart(barang, jumlah) {
-        // Cek Stok
-        if (jumlah > barang.stok) {
-            showSimpleNotification(`Stok tidak cukup! Sisa: ${barang.stok}`, 'danger');
-            return;
-        }
-
         // Cek apakah barang sudah ada di keranjang
         let existingRow = cartItemsBody.find(`tr[data-id="${barang.id}"]`);
 
         if (existingRow.length > 0) {
-            // Jika ada, UPDATE QTY
+            // Jika ada, UPDATE QTY di Inputnya
             let qtyInput = existingRow.find('.qty-input');
-            let qtyDisplay = existingRow.find('.qty-display'); // Cari elemen teks qty
             let currentQty = parseInt(qtyInput.val());
             let newQty = currentQty + jumlah;
 
+            // Validasi Stok
             if (newQty > barang.stok) {
-                showSimpleNotification(`Mencapai batas stok! Sisa: ${barang.stok}`, 'warning');
+                showSimpleNotification(`Stok mentok! Sisa cuma: ${barang.stok}`, 'warning');
+                newQty = barang.stok; // Set ke max stok
+            }
+
+            // Update nilai input dan trigger event change agar subtotal update
+            qtyInput.val(newQty).trigger('change');
+
+            // Efek visual kedip kuning
+            existingRow.addClass('table-warning');
+            setTimeout(() => existingRow.removeClass('table-warning'), 500);
+
+        } else {
+            // Validasi awal
+            if (jumlah > barang.stok) {
+                showSimpleNotification(`Stok tidak cukup! Sisa: ${barang.stok}`, 'danger');
                 return;
             }
 
-            qtyInput.val(newQty);
-            // Update teks jumlah di tabel (karena di HTML bawah kita pakai class qty-display)
-            existingRow.find('td:nth-child(2)').contents().filter(function(){ return this.nodeType == 3; }).first().replaceWith(newQty + " ");
-
-            // Update Subtotal
-            let newSubtotal = barang.harga * newQty;
-            existingRow.data('subtotal', newSubtotal);
-            existingRow.find('.text-end').text(formatRupiah(newSubtotal));
-
-        } else {
-            // Jika belum, TAMBAH BARIS BARU
             let subtotal = barang.harga * jumlah;
+
+            // Render Baris Baru dengan INPUT TYPE NUMBER
             let newRow = `
-                <tr data-id="${barang.id}" data-subtotal="${subtotal}">
+                <tr data-id="${barang.id}" data-price="${barang.harga}" data-subtotal="${subtotal}" data-stock="${barang.stok}">
                     <td>
                         <div class="fw-bold">${barang.nama_barang}</div>
                         <small class="text-muted">${barang.kode_barang}</small>
                         <input type="hidden" name="items[${itemIndex}][barang_id]" value="${barang.id}">
                     </td>
-                    <td class="text-center">
-                        ${jumlah}
-                        <input type="hidden" name="items[${itemIndex}][jumlah]" class="qty-input" value="${jumlah}">
+                    <td class="text-center" style="width: 130px;">
+                        <input type="number" name="items[${itemIndex}][jumlah]"
+                               class="form-control text-center fw-bold qty-input"
+                               value="${jumlah}" min="1" max="${barang.stok}">
                     </td>
-                    <td class="text-end">${formatRupiah(subtotal)}</td>
+                    <td class="text-end subtotal-display">${formatRupiah(subtotal)}</td>
                     <td class="text-center">
                         <button type="button" class="btn btn-sm btn-outline-danger remove-item-btn"><i class="fas fa-trash"></i></button>
                     </td>
                 </tr>`;
-            cartItemsBody.prepend(newRow); // Tambah di atas
+            cartItemsBody.prepend(newRow);
             itemIndex++;
         }
-
         calculateTotal();
     }
+
+    // --- EVENT LISTENER SAAT QTY DIEDIT DI TABEL ---
+    cartItemsBody.on('change input keyup', '.qty-input', function() {
+        let input = $(this);
+        let row = input.closest('tr');
+        let price = parseFloat(row.data('price'));
+        let stock = parseInt(row.data('stock'));
+        let qty = parseInt(input.val());
+
+        // 1. Validasi Input Kosong/Minus
+        if (isNaN(qty) || qty < 1) {
+            qty = 1; // Default ke 1 jika dihapus habis
+            // Jangan update val() dulu biar user enak ngetik, tapi perhitungan pake 1
+        }
+
+        // 2. Validasi Stok Maksimal
+        if (qty > stock) {
+            showSimpleNotification(`Maksimal stok tersedia: ${stock}`, 'danger');
+            input.val(stock); // Paksa balik ke stok max
+            qty = stock;
+        }
+
+        // 3. Hitung Ulang Subtotal Baris
+        let newSubtotal = price * qty;
+        row.data('subtotal', newSubtotal);
+        row.find('.subtotal-display').text(formatRupiah(newSubtotal));
+
+        // 4. Hitung Ulang Total Belanja
+        calculateTotal();
+    });
 
     // --- 3. LOGIKA INPUT MANUAL (Select2) ---
     const barangDataEl = document.getElementById('barang-data');
@@ -255,22 +282,16 @@ document.addEventListener('DOMContentLoaded', function () {
         }
     }).val(null).trigger('change');
 
-    // Tombol Tambah Manual
     addToCartBtn.on('click', function() {
         const sel = barangSelector.select2('data')[0];
         const qty = parseInt(jumlahInput.val());
-
-        // Panggil fungsi shared
         addToCart(sel, qty);
-
-        // Reset Form Manual
         barangSelector.val(null).trigger('change');
         jumlahInput.val('');
         validateInput();
-        scannerInput.focus(); // Kembalikan fokus ke scanner
+        scannerInput.focus();
     });
 
-    // Validasi Manual Input
     function validateInput() {
         const sel = barangSelector.select2('data')[0];
         const qty = parseInt(jumlahInput.val());
@@ -287,7 +308,6 @@ document.addEventListener('DOMContentLoaded', function () {
     barangSelector.on('select2:select', () => { validateInput(); jumlahInput.focus(); });
     jumlahInput.on('input', validateInput);
 
-
     // --- 4. KALKULASI & UTILITIES ---
     cartItemsBody.on('click', '.remove-item-btn', function() {
         $(this).closest('tr').remove();
@@ -301,7 +321,7 @@ document.addEventListener('DOMContentLoaded', function () {
             total += parseFloat($(this).data('subtotal'));
         });
 
-        totalHargaEl.val(formatRupiah(total, false)); // false = tanpa Rp di value input
+        totalHargaEl.val(formatRupiah(total, false));
         calculateChange();
         validateSaveButton(total);
     }
@@ -330,7 +350,6 @@ document.addEventListener('DOMContentLoaded', function () {
         simpanBtn.prop('disabled', !(hasItem && bayar >= total));
     }
 
-    // Helper Format Rupiah
     function formatRupiah(angka, prefix = 'Rp ') {
         let number_string = angka.toString().replace(/[^,\d]/g, '').toString(),
             split = number_string.split(','),
@@ -351,8 +370,8 @@ document.addEventListener('DOMContentLoaded', function () {
         setTimeout(() => div.fadeOut(() => div.remove()), 2500);
     }
 
-    // Notifikasi dari session
     @if (session('success')) showSimpleNotification("{{ session('success') }}", 'success'); @endif
+    @if (session('error')) showSimpleNotification("{{ session('error') }}", 'danger'); @endif
 });
 </script>
 @endpush

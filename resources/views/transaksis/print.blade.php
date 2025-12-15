@@ -16,15 +16,16 @@
 <body>
     <div class="receipt">
         <div class="center">
-            <h3>Smart Mart</h3>
-            <div>Jl. Contoh No.1</div>
-            <div>Telp: 0812-3456-7890</div>
+            <h3>Toko 134</h3>
+            <div>Jl. Sukamenak No.134</div>
+            <div>Telp: 0857-9499-3687</div>
             <hr>
         </div>
 
         <div>
             <div>Kode: <strong>{{ $penjualan->kode }}</strong></div>
-            <div>Tanggal: {{ $penjualan->created_at->format('d-m-Y H:i') }}</div>
+            <div>Tanggal: {{ $penjualan->created_at->format('d-m-Y') }}</div>
+            <div>Jam: {{ $penjualan->created_at->format('H:i') }}</div>
         </div>
 
         <table>
@@ -51,6 +52,13 @@
             <div>Total</div>
             <div class="total">Rp {{ number_format($penjualan->total,0,',','.') }}</div>
         </div>
+
+        <br>
+        <br>
+        <div class="center">
+            <p>Sistem Manajemen Stok Barang - SMart</p>
+        </div>
+
 
         <div class="center no-print" style="margin-top:10px;">
             <button onclick="window.print()">Cetak</button>
